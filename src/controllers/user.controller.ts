@@ -19,6 +19,9 @@ import {
 } from '@loopback/rest';
 import {User} from '../models';
 import {UserRepository} from '../repositories';
+import {
+  authenticate,
+} from '@loopback/authentication';
 
 export class UserController {
   constructor(
@@ -109,6 +112,7 @@ export class UserController {
       },
     },
   })
+  @authenticate('jwt')
   async findById(@param.path.string('id') id: string): Promise<User> {
     return this.userRepository.findById(id);
   }
