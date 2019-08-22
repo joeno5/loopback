@@ -17,7 +17,7 @@ import {
   AuthenticationComponent,
   registerAuthenticationStrategy,
 } from '@loopback/authentication';
-import {JWTAuthenticationStrategy} from './strategy/jwtauthenticationstrategy';
+// import {JWTAuthenticationStrategy} from './strategy/jwtauthenticationstrategy';
 
 export class BackendApplication extends BootMixin(
   ServiceMixin(RepositoryMixin(RestApplication)),
@@ -30,7 +30,7 @@ export class BackendApplication extends BootMixin(
     // Bind authentication component related elements
     this.component(AuthenticationComponent);
 
-    registerAuthenticationStrategy(this, JWTAuthenticationStrategy);
+    // registerAuthenticationStrategy(this, JWTAuthenticationStrategy);
 
     // Set up the custom sequence
     this.sequence(JWTAuthenticationSequence);
@@ -74,8 +74,8 @@ export class BackendApplication extends BootMixin(
       JWTConstants.JWT_IGNORE_EXPIRATION_VALUE
     )
 
-    this.bind(JWTBindings.JWT_VALIDATION_EXCLUDE_PATH).to(
-      JWTConstants.JWT_VALIDATION_EXCLUDE_PATH_VALUE
+    this.bind(JWTBindings.JWT_VALIDATION_EXCLUDE_PATHS).to(
+      JWTConstants.JWT_VALIDATION_EXCLUDE_PATHS_VALUE
     );
   }  
 }

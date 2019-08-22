@@ -35,7 +35,7 @@ const getBearer = R.pipe(
     ),
 )
 
-const getToken = R.pipe(
+const getJWTToken = R.pipe(
     R.view(authorizationHeader),
     R.when(
         isNotNil, 
@@ -50,6 +50,16 @@ const getJWTHeader = R.pipe(
   (a: string) => JSON.parse(a),
 )
 
+const startWith = R.curry((a: string, b: string) => {
+  return a.startsWith(b);
+});
+
+const notInExcludePath = R.curry((path: string, excludePaths: string) => R.pipe(
+    R.split(';'),
+    R.any(startWith(path)),
+    R.not
+)(excludePaths));
+
 export class JWTAuthenticationSequence implements SequenceHandler {
   constructor(
     @inject(SequenceActions.FIND_ROUTE) protected findRoute: FindRoute,
@@ -57,7 +67,7 @@ export class JWTAuthenticationSequence implements SequenceHandler {
     @inject(SequenceActions.INVOKE_METHOD) protected invoke: InvokeMethod,
     @inject(SequenceActions.SEND) protected send: Send,
     @inject(SequenceActions.REJECT) protected reject: Reject,
-    @inject(JWTBindings.JWT_VALIDATION_EXCLUDE_PATH) private jwtExcludePath: string,
+    @inject(JWTBindings.JWT_VALIDATION_EXCLUDE_PATHS) private jwtExcludePaths: string,
     @inject(JWTBindings.JWKS_URL) private jwksUrl: string,
     @inject(JWTBindings.JWT_AUDIENCE) private audience: string,
     @inject(JWTBindings.JWT_ISSUER) private issuer: string,
@@ -68,46 +78,44 @@ export class JWTAuthenticationSequence implements SequenceHandler {
     try {
       const {request, response} = context;
       const route = this.findRoute(request);
-
-      // todo skip auth check by jwtExcludePath
-      console.log(this.jwtExcludePath);
-      // console.log(request.path);
       
-      var token = getToken(request);
+      if (notInExcludePath(request.path, this.jwtExcludePaths)) {
+        var token = getJWTToken(request);
 
-      if (!token) {
-        throw new HttpErrors.Unauthorized(
-          'Invalid Authorization Header',
-        );
-      }
-
-      var {alg, x5t} = getJWTHeader(token);
-      
-      const jwks = jwksClient({
-        jwksUri: this.jwksUrl,
-        cache: true,
-      });
-      
-      const getSigningKeyAsync = promisify(jwks.getSigningKey);
-      const verifyAsync = promisify(jwt.verify);
-
-      var key = await getSigningKeyAsync(x5t);
-      
-      // verify JWT Token (check audience, issuer, and exp)
-      // ignore expiration checking if ignoreExpiration is ture
-      const decoded = await verifyAsync(
-        token,
-        key.publicKey,
-        {
-          algorithms: [alg],
-          audience: this.audience,
-          issuer: this.issuer,
-          ignoreExpiration: this.ignoreExpiration,
+        if (!token) {
+          throw new HttpErrors.Unauthorized(
+            'No JWT token provided.',
+          );
         }
-      )
 
-      console.log(decoded);
+        // retrieve algorithm and key ID from token
+        var {alg, x5t} = getJWTHeader(token);
+        
+        // get Signing Key from JWKS server
+        const jwks = jwksClient({
+          jwksUri: this.jwksUrl,
+          cache: true,
+        });
+        
+        const getSigningKeyAsync = promisify(jwks.getSigningKey);
+        var signingKey = await getSigningKeyAsync(x5t);
+        
+        // verify JWT Token (check audience, issuer, and exp)
+        // ignore expiration checking if ignoreExpiration is ture
+        const verifyAsync = promisify(jwt.verify);
+        const decoded = await verifyAsync(
+          token,
+          signingKey.publicKey,
+          {
+            algorithms: [alg],
+            audience: this.audience,
+            issuer: this.issuer,
+            ignoreExpiration: this.ignoreExpiration,
+          }
+        )
 
+        console.log(decoded);
+      }
       // Authentication successful, proceed to invoke controller
       const args = await this.parseParams(request, route);
       const result = await this.invoke(route, args);

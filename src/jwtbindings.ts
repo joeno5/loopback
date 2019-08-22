@@ -5,7 +5,7 @@ export namespace JWTConstants {
   export const JWT_AUDIENCE_VALUE = 'urn:uuid:cafccaa2-0996-4ba4-b241-1a2c195c6d71';
   export const JWT_ISSUER_VALUE = 'http://adfs-uat.polyu.edu.hk/adfs/services/trust';
   export const JWT_IGNORE_EXPIRATION_VALUE = true;
-  export const JWT_VALIDATION_EXCLUDE_PATH_VALUE = '/ping';
+  export const JWT_VALIDATION_EXCLUDE_PATHS_VALUE = '/ping;/login/;/public/';
 }
 
 export namespace JWTBindings {
@@ -25,7 +25,7 @@ export namespace JWTBindings {
     'jwt.ignore.expiration'
   )
 
-  export const JWT_VALIDATION_EXCLUDE_PATH = BindingKey.create<string>(
+  export const JWT_VALIDATION_EXCLUDE_PATHS = BindingKey.create<string>(
     'jwt.validation.exclude.path',
   );
 }
