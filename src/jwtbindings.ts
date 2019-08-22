@@ -1,5 +1,6 @@
 import {BindingKey} from '@loopback/context';
 
+
 export namespace JWTConstants {
   export const JWKS_URL_VALUE = 'https://adfs-uat.polyu.edu.hk/adfs/discovery/keys';
   export const JWT_AUDIENCE_VALUE = 'urn:uuid:cafccaa2-0996-4ba4-b241-1a2c195c6d71';
@@ -28,4 +29,13 @@ export namespace JWTBindings {
   export const JWT_VALIDATION_EXCLUDE_PATHS = BindingKey.create<string>(
     'jwt.validation.exclude.path',
   );
+
+  export const CURRENT_USER = BindingKey.create<UserProfile | undefined>(
+    'jwt.current.user',
+  );
+}
+
+export interface UserProfile {
+  username?: string;
+  email?: string;
 }

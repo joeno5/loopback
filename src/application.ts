@@ -13,11 +13,6 @@ import {RestApplication} from '@loopback/rest';
 import {ServiceMixin} from '@loopback/service-proxy';
 import * as path from 'path';
 import {JWTAuthenticationSequence} from './sequences/jwtsequence';
-import {
-  AuthenticationComponent,
-  registerAuthenticationStrategy,
-} from '@loopback/authentication';
-// import {JWTAuthenticationStrategy} from './strategy/jwtauthenticationstrategy';
 
 export class BackendApplication extends BootMixin(
   ServiceMixin(RepositoryMixin(RestApplication)),
@@ -26,13 +21,8 @@ export class BackendApplication extends BootMixin(
     super(options);
 
     this.setUpBindings();
-
-    // Bind authentication component related elements
-    this.component(AuthenticationComponent);
-
-    // registerAuthenticationStrategy(this, JWTAuthenticationStrategy);
-
-    // Set up the custom sequence
+    
+    // Set up the JWT Authentication in the sequence
     this.sequence(JWTAuthenticationSequence);
 
     

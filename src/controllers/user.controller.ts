@@ -20,13 +20,18 @@ import {
 import {User} from '../models';
 import {UserRepository} from '../repositories';
 import {
-  authenticate,
-} from '@loopback/authentication';
+  JWTBindings,
+  UserProfile,
+} from '../jwtbindings';
+import {
+  inject,
+} from '@loopback/context';
 
 export class UserController {
   constructor(
     @repository(UserRepository)
     public userRepository : UserRepository,
+    @inject(JWTBindings.CURRENT_USER) protected userProfile : UserProfile,
   ) {}
 
   @post('/users', {
@@ -112,8 +117,9 @@ export class UserController {
       },
     },
   })
-  @authenticate('jwt')
   async findById(@param.path.string('id') id: string): Promise<User> {
+    console.log("@@@@@@");
+    console.log(this.userProfile);
     return this.userRepository.findById(id);
   }
 

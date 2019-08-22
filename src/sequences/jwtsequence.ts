@@ -1,9 +1,7 @@
-// Copyright IBM Corp. 2018,2019. All Rights Reserved.
-// Node module: loopback4-example-shopping
-// This file is licensed under the MIT License.
-// License text available at https://opensource.org/licenses/MIT
-
-import {inject} from '@loopback/context';
+import {
+  inject,
+  Setter,
+} from '@loopback/context';
 import {
   FindRoute,
   InvokeMethod,
@@ -15,13 +13,18 @@ import {
   SequenceHandler,
   HttpErrors
 } from '@loopback/rest';
-import {JWTBindings} from '../jwtbindings';
+import {
+  JWTBindings,
+  UserProfile,
+} from '../jwtbindings';
 import {promisify} from 'util';
 
-const SequenceActions = RestBindings.SequenceActions;
 const jwksClient = require('jwks-rsa');
 const jwt = require('jsonwebtoken');
 const R = require('ramda');
+
+const SequenceActions = RestBindings.SequenceActions;
+const verifyJWTAsync = promisify(jwt.verify);
 
 const isNotNil = R.complement(R.isNil);
 const authorizationHeader = R.lensPath(['headers','authorization']);
@@ -54,7 +57,7 @@ const startWith = R.curry((a: string, b: string) => {
   return a.startsWith(b);
 });
 
-const notInExcludePath = R.curry((path: string, excludePaths: string) => R.pipe(
+const notInExcludePaths = R.curry((path: string, excludePaths: string) => R.pipe(
     R.split(';'),
     R.any(startWith(path)),
     R.not
@@ -72,15 +75,15 @@ export class JWTAuthenticationSequence implements SequenceHandler {
     @inject(JWTBindings.JWT_AUDIENCE) private audience: string,
     @inject(JWTBindings.JWT_ISSUER) private issuer: string,
     @inject(JWTBindings.JWT_IGNORE_EXPIRATION) private ignoreExpiration: boolean,
+    @inject.setter(JWTBindings.CURRENT_USER) readonly setCurrentUser: Setter<UserProfile>,
   ) {}
 
   async handle(context: RequestContext) {
     try {
       const {request, response} = context;
-      const route = this.findRoute(request);
       
-      if (notInExcludePath(request.path, this.jwtExcludePaths)) {
-        var token = getJWTToken(request);
+      if (notInExcludePaths(request.path, this.jwtExcludePaths)) {
+        const token = getJWTToken(request);
 
         if (!token) {
           throw new HttpErrors.Unauthorized(
@@ -88,24 +91,20 @@ export class JWTAuthenticationSequence implements SequenceHandler {
           );
         }
 
-        // retrieve algorithm and key ID from token
-        var {alg, x5t} = getJWTHeader(token);
+        // retrieve algorithm and key ID from JWT token
+        const {alg, x5t} = getJWTHeader(token);
         
         // get Signing Key from JWKS server
-        const jwks = jwksClient({
-          jwksUri: this.jwksUrl,
-          cache: true,
-        });
-        
+        // todo: cache signingKey
+        const jwks = jwksClient({jwksUri: this.jwksUrl});
         const getSigningKeyAsync = promisify(jwks.getSigningKey);
-        var signingKey = await getSigningKeyAsync(x5t);
+        const {publicKey} = await getSigningKeyAsync(x5t);
         
-        // verify JWT Token (check audience, issuer, and exp)
-        // ignore expiration checking if ignoreExpiration is ture
-        const verifyAsync = promisify(jwt.verify);
-        const decoded = await verifyAsync(
+        // verify JWT Token (check against audience, issuer, and expiration time)
+        // ignore expiration time checking if ignoreExpiration is ture
+        const decodedToken = await verifyJWTAsync(
           token,
-          signingKey.publicKey,
+          publicKey,
           {
             algorithms: [alg],
             audience: this.audience,
@@ -114,15 +113,24 @@ export class JWTAuthenticationSequence implements SequenceHandler {
           }
         )
 
-        console.log(decoded);
+        console.log(decodedToken);
+        
+        let userProfile = Object.assign(
+          {username: '', email: ''},
+          {username: decodedToken.cn, email: decodedToken.upn}
+        );
+        
+        // set user profile set context
+        this.setCurrentUser(userProfile);
       }
+
       // Authentication successful, proceed to invoke controller
+      const route = this.findRoute(request);
       const args = await this.parseParams(request, route);
       const result = await this.invoke(route, args);
       this.send(response, result);
     } catch (error) {
       Object.assign(error, {statusCode: 401 /* Unauthorized */});
-      
       this.reject(context, error);
       return;
     }
