@@ -63,6 +63,8 @@ const notInExcludePaths = R.curry((path: string, excludePaths: string) => R.pipe
     R.not
 )(excludePaths));
 
+var signingKey: any = null;
+
 export class JWTAuthenticationSequence implements SequenceHandler {
   constructor(
     @inject(SequenceActions.FIND_ROUTE) protected findRoute: FindRoute,
@@ -76,7 +78,7 @@ export class JWTAuthenticationSequence implements SequenceHandler {
     @inject(JWTBindings.JWT_ISSUER) private issuer: string,
     @inject(JWTBindings.JWT_IGNORE_EXPIRATION) private ignoreExpiration: boolean,
     @inject.setter(JWTBindings.CURRENT_USER) readonly setCurrentUser: Setter<UserProfile>,
-  ) {}
+  ) {console.log('123456')}
 
   async handle(context: RequestContext) {
     try {
@@ -95,16 +97,18 @@ export class JWTAuthenticationSequence implements SequenceHandler {
         const {alg, x5t} = getJWTHeader(token);
         
         // get Signing Key from JWKS server
-        // todo: cache signingKey
-        const jwks = jwksClient({jwksUri: this.jwksUrl});
-        const getSigningKeyAsync = promisify(jwks.getSigningKey);
-        const {publicKey} = await getSigningKeyAsync(x5t);
+        if (R.isNil(signingKey)) {
+          const jwks = jwksClient({jwksUri: this.jwksUrl});
+          const getSigningKeyAsync = promisify(jwks.getSigningKey);
+          const {publicKey} = await getSigningKeyAsync(x5t);
+          signingKey = publicKey;
+        }
         
         // verify JWT Token (check against audience, issuer, and expiration time)
         // ignore expiration time checking if ignoreExpiration is ture
         const decodedToken = await verifyJWTAsync(
           token,
-          publicKey,
+          signingKey,
           {
             algorithms: [alg],
             audience: this.audience,
