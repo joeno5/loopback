@@ -78,7 +78,7 @@ export class JWTAuthenticationSequence implements SequenceHandler {
     @inject(JWTBindings.JWT_ISSUER) private issuer: string,
     @inject(JWTBindings.JWT_IGNORE_EXPIRATION) private ignoreExpiration: boolean,
     @inject.setter(JWTBindings.CURRENT_USER) readonly setCurrentUser: Setter<UserProfile>,
-  ) {console.log('123456')}
+  ) {}
 
   async handle(context: RequestContext) {
     try {
