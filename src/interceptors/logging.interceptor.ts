@@ -56,12 +56,7 @@ export class LoggingInterceptor implements Provider<Interceptor> {
       const req = await invocationCtx.get(RestBindings.Http.REQUEST, {optional: true,});
 
       if (req) {
-        
-        if (this.userProfile) {
-          loggerHttp.info(`${this.userProfile.username}: ${req.path}`);
-        } else {
-          loggerHttp.info(req.path);
-        }
+        loggerHttp.info(`${this.userProfile.username}: ${req.path}`);
       }
 
       const result = await next();

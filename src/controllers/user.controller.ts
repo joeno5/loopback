@@ -118,8 +118,6 @@ export class UserController {
     },
   })
   async findById(@param.path.string('id') id: string): Promise<User> {
-    console.log("@@@@@@");
-    console.log(this.userProfile);
     return this.userRepository.findById(id);
   }
 

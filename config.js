@@ -21,6 +21,7 @@ exports.config = {
         },
         expressSettings: {
             'x-powered-by': false,
+            env: process.env.NODE_ENV || 'development',
         },
         router: {
             strict: true

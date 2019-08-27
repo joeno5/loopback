@@ -13,7 +13,6 @@ import {RestApplication} from '@loopback/rest';
 import {ServiceMixin} from '@loopback/service-proxy';
 import * as path from 'path';
 import {JWTAuthenticationSequence} from './sequences/jwtsequence';
-import { configure, getLogger } from 'log4js';
 
 export class BackendApplication extends BootMixin(
   ServiceMixin(RepositoryMixin(RestApplication)),
@@ -22,8 +21,7 @@ export class BackendApplication extends BootMixin(
     super(options);
 
     this.setupBindings();
-    this.setupLoggers();
-
+    
     // Set up the JWT Authentication in the sequence
     this.sequence(JWTAuthenticationSequence);
 
@@ -78,18 +76,7 @@ export class BackendApplication extends BootMixin(
     this.bind(JWTBindings.JWT_VALIDATION_EXCLUDE_PATHS).to(
       JWTConstants.JWT_VALIDATION_EXCLUDE_PATHS_VALUE
     );
-  }  
 
-  setupLoggers(): void {
-    const config = require('../log4js.json');
-
-    configure(config);
-
-    var log = getLogger("app");
-    log.debug('test');
-
-    var log2 = getLogger("error");
-    log2.debug('error');
-    log2.error('right error');
-  }  
+    this.bind(JWTBindings.CURRENT_USER).to({});
+  }
 }

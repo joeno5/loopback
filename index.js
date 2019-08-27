@@ -15,7 +15,7 @@ if (require.main === module) {
   //     },
   //   },
   // };
-  console.log(config);
+  
   application.main(config).catch(err => {
     console.error('Cannot start the application.', err);
     process.exit(1);
