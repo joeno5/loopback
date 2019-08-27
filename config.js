@@ -14,13 +14,16 @@ exports.config = {
         cors: {
             origin: ['https://resttesttest.com', 'https://www.test-cors.org'],
             methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-            preflightContinue: false,
+            preflightContinue: true,
             optionsSuccessStatus: 204,
             maxAge: 86400,
             credentials: true,
         },
         expressSettings: {
             'x-powered-by': false,
+        },
+        router: {
+            strict: true
         },
     },
 }

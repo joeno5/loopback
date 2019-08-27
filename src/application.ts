@@ -27,7 +27,7 @@ export class BackendApplication extends BootMixin(
 
     
     // Set up default home page
-    this.static('/', path.join(__dirname, '../public'));
+    this.static('/public', path.join(__dirname, '../public'));
 
     // Customize @loopback/rest-explorer configuration here
     this.bind(RestExplorerBindings.CONFIG).to({
@@ -47,6 +47,15 @@ export class BackendApplication extends BootMixin(
     };
   }
 
+  async stop() {
+    // This is where you would do whatever is necessary before stopping your
+    // app (graceful closing of connections, flushing buffers, etc)
+    console.log('Widget application is shutting down...');
+    // The superclass stop method will call stop on all servers that are
+    // bound to the application.
+    await super.stop();
+  }
+  
   setUpBindings(): void {
     this.bind(JWTBindings.JWKS_URL).to(
       JWTConstants.JWKS_URL_VALUE,
