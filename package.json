@@ -61,7 +61,7 @@
     "ramda": "^0.26.1"
   },
   "devDependencies": {
-    "@loopback/build": "^2.0.8",
+    "@loopback/build": "^9.0.6",
     "@loopback/eslint-config": "^4.0.1",
     "@loopback/testlab": "^1.7.4",
     "@types/node": "^10.14.16",
